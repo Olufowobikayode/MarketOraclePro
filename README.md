@@ -144,12 +144,23 @@
 }
 ```
 
-## 🚀 Live Deployment
+## 🚀 Deployment
 
-### Current URLs
-- **Frontend**: https://3000-ixcg2s3y44r7ean2gnsqk-ad490db5.sandbox.novita.ai
-- **Backend API**: https://3001-ixcg2s3y44r7ean2gnsqk-ad490db5.sandbox.novita.ai
-- **API Health**: https://3001-ixcg2s3y44r7ean2gnsqk-ad490db5.sandbox.novita.ai/
+### Production Deployment (Render.com)
+
+This application is ready to deploy to [Render.com](https://render.com) with automatic configuration:
+
+1. **Push code to GitHub/GitLab**
+2. **Connect to Render** and select your repository
+3. **Configure environment variables** (MongoDB URI, API URLs)
+4. **Deploy!** - Render will use the included `render.yaml` configuration
+
+📖 **See [RENDER_DEPLOYMENT.md](./RENDER_DEPLOYMENT.md) for complete deployment instructions**
+
+### Development URLs
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:3001
+- **API Health**: http://localhost:3001/
 
 ### API Status
 ```json

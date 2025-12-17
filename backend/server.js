@@ -1,7 +1,12 @@
 
 // backend/server.js - Enhanced Market Oracle Backend
 // Features: User management, Activity tracking, Search history, Favorites, Analytics
-require('dotenv').config({ path: '../.env.local' });
+
+// Load environment variables (works for both local and Render)
+if (process.env.NODE_ENV !== 'production') {
+    require('dotenv').config({ path: '../.env.local' });
+}
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -10,9 +15,34 @@ const { GoogleGenAI } = require('@google/genai');
 
 const app = express();
 
-// Robust CORS setup
+// Robust CORS setup - Allow frontend from any origin
+const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:5173',
+    process.env.FRONTEND_URL,
+    /\.onrender\.com$/,  // Allow all Render domains
+    /\.pages\.dev$/      // Allow Cloudflare Pages if needed
+].filter(Boolean);
+
 app.use(cors({
-    origin: '*', // Allow all origins for development flexibility
+    origin: (origin, callback) => {
+        // Allow requests with no origin (mobile apps, Postman, etc.)
+        if (!origin) return callback(null, true);
+        
+        // Check if origin matches allowed patterns
+        const isAllowed = allowedOrigins.some(allowed => {
+            if (typeof allowed === 'string') return origin === allowed;
+            if (allowed instanceof RegExp) return allowed.test(origin);
+            return false;
+        });
+        
+        if (isAllowed || process.env.NODE_ENV !== 'production') {
+            callback(null, true);
+        } else {
+            callback(null, true); // Allow all in this case for flexibility
+        }
+    },
+    credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'x-gemini-api-key']
 }));
@@ -848,8 +878,11 @@ app.get('/api/search/:userId', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, '0.0.0.0', () => {
+const HOST = process.env.NODE_ENV === 'production' ? '0.0.0.0' : '0.0.0.0';
+
+app.listen(PORT, HOST, () => {
     console.log(`🚀 Market Oracle Backend running on port ${PORT}`);
+    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`📊 MongoDB: ${isMongoConnected ? 'Connected' : 'Connecting...'}`);
     console.log(`🔑 API Key: User-provided (via x-gemini-api-key header)`);
 });
