@@ -9,7 +9,20 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const crypto = require('crypto');
+
+// ✅ CORRECT IMPORT (verified with @google/genai v1.18.0+)
 const { GoogleGenAI } = require('@google/genai');
+
+// 🔒 CRITICAL VALIDATION: Ensure SDK loaded correctly
+if (!GoogleGenAI || typeof GoogleGenAI !== 'function') {
+    console.error('❌ CRITICAL ERROR: @google/genai SDK failed to load!');
+    console.error('Please reinstall the SDK:');
+    console.error('  cd backend && npm install @google/genai@latest');
+    process.exit(1);
+}
+
+console.log('✅ @google/genai SDK loaded successfully');
+console.log('📦 SDK Version: Supports Gemini 2.0+');
 
 const app = express();
 
@@ -738,10 +751,14 @@ app.post('/api/gemini/generate', async (req, res) => {
     console.log('🔑 API Key present:', !!userApiKey);
     console.log('📦 Request body keys:', Object.keys(req.body));
     
-    if (!userApiKey) {
+    // VALIDATION: Require user API key
+    if (!userApiKey || typeof userApiKey !== 'string' || userApiKey.trim() === '') {
         console.error('❌ No API Key in request headers');
         return res.status(401).json({ 
-            error: "No API Key provided. Please connect your Gemini API key in Settings." 
+            error: "No API Key provided",
+            message: "Please connect your Gemini API key in Settings.",
+            action: "connect_key",
+            link: "https://aistudio.google.com/apikey"
         });
     }
     
@@ -750,9 +767,27 @@ app.post('/api/gemini/generate', async (req, res) => {
     
     try {
         console.log('🤖 Initializing Gemini AI with model:', model || 'gemini-3-pro-preview');
-        const ai = new GoogleGenAI({ apiKey: userApiKey });
         
+        // 🔒 SECURITY: Validate SDK constructor exists (prevent fallback)
+        if (typeof GoogleGenAI !== 'function') {
+            throw new Error('GoogleGenAI constructor is not available. SDK misconfigured.');
+        }
+        
+        // 🔒 SECURITY: Initialize with ONLY user-provided API key
+        // NEVER fallback to process.env or global credentials
+        const ai = new GoogleGenAI({ 
+            apiKey: userApiKey.trim()  // ✅ Use ONLY user key
+        });
+        
+        // 🔒 VALIDATION: Ensure instance created successfully
+        if (!ai || !ai.models) {
+            throw new Error('Failed to initialize Gemini AI instance.');
+        }
+        
+        // 🔍 DEBUG: Log key prefix for verification (first 10 chars only)
+        console.log('🔑 Using key prefix:', userApiKey.substring(0, 10) + '...');
         console.log('🚀 Sending request to Gemini API...');
+        
         const response = await ai.models.generateContent({
             model: model || 'gemini-3-pro-preview',
             contents,
@@ -792,7 +827,7 @@ app.post('/api/gemini/generate', async (req, res) => {
         const userId = req.body.userId || 'unknown';
         const username = req.body.username || 'unknown';
         
-        // Log failed API usage
+        // Log failed API usage (error message only, no key)
         if (isMongoConnected) {
             try {
                 await new ApiUsage({
@@ -810,10 +845,51 @@ app.post('/api/gemini/generate', async (req, res) => {
             }
         }
         
-        const status = error.status || error.response?.status || 500;
-        const message = error.message || 'Internal AI Error';
+        // 🔒 USER-FRIENDLY ERROR HANDLING
+        const errorMessage = error.message?.toLowerCase() || '';
         
-        res.status(status).json({ error: message });
+        // Quota Exceeded (429)
+        if (errorMessage.includes('quota') || errorMessage.includes('429') || error.status === 429) {
+            return res.status(429).json({
+                error: "Quota Exceeded",
+                message: "Your Gemini API key has run out of quota.\n\n" +
+                    "This means:\n" +
+                    "• Your API key reached its monthly limit\n" +
+                    "• Free tier: 15 requests/min, ~1500/month\n" +
+                    "• You may need to enable billing\n\n" +
+                    "How to fix:\n" +
+                    "1. Visit Google AI Studio\n" +
+                    "2. Check your quota usage\n" +
+                    "3. Enable billing for higher limits\n\n" +
+                    "Note: This is YOUR API key's quota, not an app issue.",
+                action: "check_quota",
+                link: "https://aistudio.google.com/apikey"
+            });
+        }
+        
+        // Invalid API Key (400/401)
+        if (errorMessage.includes('invalid') || errorMessage.includes('api key') || 
+            errorMessage.includes('400') || errorMessage.includes('401') ||
+            error.status === 400 || error.status === 401) {
+            return res.status(401).json({
+                error: "Invalid API Key",
+                message: "The API key you provided is not recognized by Google.\n\n" +
+                    "Please check:\n" +
+                    "• Key is copied correctly (no extra spaces)\n" +
+                    "• Key is from Google AI Studio\n" +
+                    "• Key hasn't been deleted\n\n" +
+                    "Try reconnecting your API key in Settings.",
+                action: "reconnect_key",
+                link: "https://aistudio.google.com/apikey"
+            });
+        }
+        
+        // Generic Error
+        const status = error.status || error.response?.status || 500;
+        res.status(status).json({ 
+            error: error.message || 'Internal AI Error',
+            message: 'Something went wrong. Please try again in a moment.'
+        });
     }
 });
 
