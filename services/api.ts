@@ -1,5 +1,5 @@
 
-const API_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000/api';
+const API_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3001/api';
 
 // Helper: Fail fast if the backend is sleeping or unreachable
 const fetchWithTimeout = async (url: string, options: RequestInit = {}, timeout = 8000) => {
@@ -79,6 +79,176 @@ export const api = {
         } catch (error) {
             console.warn("API Add Points Error:", error);
             return false;
+        }
+    },
+    
+    // Enhanced API endpoints for new features
+    logActivity: async (data: {
+        userId: number | string;
+        username: string;
+        activityType: string;
+        query?: string;
+        description?: string;
+        resultCount?: number;
+        pointsUsed?: number;
+        metadata?: any;
+    }) => {
+        try {
+            const res = await fetchWithTimeout(`${API_URL}/activity`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            return res.ok ? await res.json() : null;
+        } catch (error) {
+            console.warn("API Log Activity Error:", error);
+            return null;
+        }
+    },
+    
+    getActivityHistory: async (userId: number | string, params?: { limit?: number; page?: number; activityType?: string }) => {
+        try {
+            const queryParams = new URLSearchParams(params as any).toString();
+            const res = await fetchWithTimeout(`${API_URL}/activity/${userId}?${queryParams}`);
+            return res.ok ? await res.json() : null;
+        } catch (error) {
+            console.warn("API Get Activity History Error:", error);
+            return null;
+        }
+    },
+    
+    addToHistory: async (data: {
+        userId: number | string;
+        username: string;
+        category: string;
+        query: string;
+        queryParams?: any;
+        resultSummary?: string;
+        resultCount?: number;
+        tags?: string[];
+    }) => {
+        try {
+            const res = await fetchWithTimeout(`${API_URL}/history`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            return res.ok ? await res.json() : null;
+        } catch (error) {
+            console.warn("API Add To History Error:", error);
+            return null;
+        }
+    },
+    
+    getSearchHistory: async (userId: number | string, params?: { limit?: number; page?: number; category?: string }) => {
+        try {
+            const queryParams = new URLSearchParams(params as any).toString();
+            const res = await fetchWithTimeout(`${API_URL}/history/${userId}?${queryParams}`);
+            return res.ok ? await res.json() : null;
+        } catch (error) {
+            console.warn("API Get Search History Error:", error);
+            return null;
+        }
+    },
+    
+    addToFavorites: async (data: {
+        userId: number | string;
+        username: string;
+        category: string;
+        title: string;
+        description?: string;
+        content?: any;
+        query?: string;
+        tags?: string[];
+        notes?: string;
+    }) => {
+        try {
+            const res = await fetchWithTimeout(`${API_URL}/favorites`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            return res.ok ? await res.json() : null;
+        } catch (error) {
+            console.warn("API Add To Favorites Error:", error);
+            return null;
+        }
+    },
+    
+    getFavorites: async (userId: number | string, params?: { limit?: number; page?: number; category?: string; isArchived?: boolean }) => {
+        try {
+            const queryParams = new URLSearchParams(params as any).toString();
+            const res = await fetchWithTimeout(`${API_URL}/favorites/${userId}?${queryParams}`);
+            return res.ok ? await res.json() : null;
+        } catch (error) {
+            console.warn("API Get Favorites Error:", error);
+            return null;
+        }
+    },
+    
+    deleteFavorite: async (favoriteId: string) => {
+        try {
+            const res = await fetchWithTimeout(`${API_URL}/favorites/${favoriteId}`, {
+                method: 'DELETE'
+            });
+            return res.ok ? await res.json() : null;
+        } catch (error) {
+            console.warn("API Delete Favorite Error:", error);
+            return null;
+        }
+    },
+    
+    getAnalytics: async (userId: number | string) => {
+        try {
+            const res = await fetchWithTimeout(`${API_URL}/analytics/${userId}`);
+            return res.ok ? await res.json() : null;
+        } catch (error) {
+            console.warn("API Get Analytics Error:", error);
+            return null;
+        }
+    },
+    
+    getApiUsage: async (userId: number | string, days: number = 7) => {
+        try {
+            const res = await fetchWithTimeout(`${API_URL}/usage/${userId}?days=${days}`);
+            return res.ok ? await res.json() : null;
+        } catch (error) {
+            console.warn("API Get Usage Error:", error);
+            return null;
+        }
+    },
+    
+    search: async (userId: number | string, query: string, type: string = 'all') => {
+        try {
+            const res = await fetchWithTimeout(`${API_URL}/search/${userId}?q=${encodeURIComponent(query)}&type=${type}`);
+            return res.ok ? await res.json() : null;
+        } catch (error) {
+            console.warn("API Search Error:", error);
+            return null;
+        }
+    },
+    
+    updateUserProfile: async (userId: number | string, updates: any) => {
+        try {
+            const res = await fetchWithTimeout(`${API_URL}/user/${userId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updates)
+            });
+            return res.ok ? await res.json() : null;
+        } catch (error) {
+            console.warn("API Update Profile Error:", error);
+            return null;
+        }
+    },
+    
+    getUserProfile: async (userId: number | string) => {
+        try {
+            const res = await fetchWithTimeout(`${API_URL}/user/${userId}`);
+            return res.ok ? await res.json() : null;
+        } catch (error) {
+            console.warn("API Get Profile Error:", error);
+            return null;
         }
     }
 };
