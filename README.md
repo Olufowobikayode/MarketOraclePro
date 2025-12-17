@@ -7,9 +7,38 @@
 <img src="https://img.shields.io/badge/AI-Gemini_Pro-orange" alt="AI" />
 </div>
 
+## ⚡ Quick Start
+
+1. **Install dependencies:**
+   ```bash
+   npm install && cd backend && npm install && cd ..
+   ```
+
+2. **Configure environment:**
+   - Copy `backend/.env.example` to `backend/.env`
+   - Add your MongoDB URI and configuration
+   - Copy `.env.example` to `.env` and configure API URL
+
+3. **Run the app:**
+   ```bash
+   # Terminal 1 - Backend
+   cd backend && npm start
+   
+   # Terminal 2 - Frontend
+   npm run dev
+   ```
+
+4. **Get your Gemini API Key:** Visit https://aistudio.google.com/apikey
+
+📖 **See [SETUP_GUIDE.md](./SETUP_GUIDE.md) for detailed instructions**
+
+---
+
 ## 📋 Project Overview
 
 **Market Oracle** is a sophisticated mobile-first market intelligence and strategic assistant that combines trend analysis, keyword research, e-commerce insights, content strategy, and AI-powered Q&A into a highly interactive, card-driven application with advanced data tracking and analytics.
+
+> ✅ **Version 2.1 Update:** All ad logic has been removed for a cleaner, faster user experience. MongoDB integration is now fully functional with proper environment variable handling.
 
 ### 🎯 Key Features
 

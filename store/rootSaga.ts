@@ -14,7 +14,6 @@ import scenariosSaga from '../features/scenarios/scenariosSaga';
 import comparisonSaga from '../features/comparison/comparisonSaga';
 import authSaga from '../features/auth/authSaga';
 import apiStatusSaga from '../features/apiStatus/apiStatusSaga';
-import adSaga from '../features/ads/adSaga';
 import storeAnalysisSaga from '../features/storeAnalysis/storeAnalysisSaga';
 import productFinderSaga from '../features/productFinder/productFinderSaga';
 import leadsSaga from '../features/leads/leadsSaga';
@@ -35,7 +34,6 @@ export default function* rootSaga() {
     comparisonSaga(),
     authSaga(),
     apiStatusSaga(),
-    adSaga(),
     storeAnalysisSaga(),
     productFinderSaga(),
     leadsSaga(),

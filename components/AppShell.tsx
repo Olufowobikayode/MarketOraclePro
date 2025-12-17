@@ -14,7 +14,6 @@ import ComparisonReportDisplay from '../features/comparison/ComparisonReportDisp
 import { clearComparisonReport } from '../features/comparison/comparisonSlice';
 import ApiOutageBanner from './ApiOutageBanner';
 import SettingsModal from './SettingsModal';
-import AdInterstitial from './AdInterstitial';
 
 
 const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -43,7 +42,6 @@ const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       <BottomNav />
       <Toast />
       <SettingsModal />
-      <AdInterstitial />
       <FullscreenModal
         isOpen={!!report || comparisonLoading || !!comparisonError}
         onClose={handleCloseComparison}

@@ -3,9 +3,7 @@
 // Features: User management, Activity tracking, Search history, Favorites, Analytics
 
 // Load environment variables (works for both local and Render)
-if (process.env.NODE_ENV !== 'production') {
-    require('dotenv').config({ path: '../.env.local' });
-}
+require('dotenv').config();
 
 const express = require('express');
 const mongoose = require('mongoose');
@@ -50,15 +48,17 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 
 // --- MONGODB CONNECTION ---
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://marketoracle:OracleSecure2024@cluster0.mongodb.net/marketoracle?retryWrites=true&w=majority';
+const MONGODB_URI = process.env.MONGODB_URI;
 let isMongoConnected = false;
 
 const connectWithRetry = () => {
     if (!MONGODB_URI) {
-        console.error('❌ MONGODB_URI not set. Cannot start server.');
+        console.error('❌ MONGODB_URI not set in environment variables. Cannot start server.');
+        console.error('Please set MONGODB_URI in your .env file or environment variables.');
         process.exit(1);
     }
 
+    console.log('🔄 Attempting to connect to MongoDB...');
     mongoose.connect(MONGODB_URI)
         .then(() => {
             console.log('✅ Connected to MongoDB Atlas');
@@ -734,7 +734,12 @@ app.post('/api/points/add', async (req, res) => {
 app.post('/api/gemini/generate', async (req, res) => {
     const userApiKey = req.headers['x-gemini-api-key'];
     
+    console.log('📨 Gemini API Request received');
+    console.log('🔑 API Key present:', !!userApiKey);
+    console.log('📦 Request body keys:', Object.keys(req.body));
+    
     if (!userApiKey) {
+        console.error('❌ No API Key in request headers');
         return res.status(401).json({ 
             error: "No API Key provided. Please connect your Gemini API key in Settings." 
         });
@@ -744,8 +749,10 @@ app.post('/api/gemini/generate', async (req, res) => {
     const startTime = Date.now();
     
     try {
+        console.log('🤖 Initializing Gemini AI with model:', model || 'gemini-3-pro-preview');
         const ai = new GoogleGenAI({ apiKey: userApiKey });
         
+        console.log('🚀 Sending request to Gemini API...');
         const response = await ai.models.generateContent({
             model: model || 'gemini-3-pro-preview',
             contents,
@@ -753,41 +760,55 @@ app.post('/api/gemini/generate', async (req, res) => {
         });
         
         const duration = Date.now() - startTime;
+        console.log(`✅ Gemini API success in ${duration}ms`);
         
         // Log API usage
         const userId = req.body.userId || 'unknown';
         const username = req.body.username || 'unknown';
         
-        await new ApiUsage({
-            userId,
-            username,
-            requestType: 'generateContent',
-            model: model || 'gemini-3-pro-preview',
-            requestDuration: duration,
-            success: true,
-            timestamp: new Date()
-        }).save();
+        if (isMongoConnected) {
+            try {
+                await new ApiUsage({
+                    userId,
+                    username,
+                    requestType: 'generateContent',
+                    model: model || 'gemini-3-pro-preview',
+                    requestDuration: duration,
+                    success: true,
+                    timestamp: new Date()
+                }).save();
+            } catch (dbError) {
+                console.warn('⚠️ Failed to log API usage to MongoDB:', dbError.message);
+            }
+        }
         
         res.json(response);
         
     } catch (error) {
-        console.error('Gemini API Error:', error.message);
+        console.error('❌ Gemini API Error:', error.message);
+        console.error('Error details:', error);
         
         const duration = Date.now() - startTime;
         const userId = req.body.userId || 'unknown';
         const username = req.body.username || 'unknown';
         
         // Log failed API usage
-        await new ApiUsage({
-            userId,
-            username,
-            requestType: 'generateContent',
-            model: model || 'gemini-3-pro-preview',
-            requestDuration: duration,
-            success: false,
-            errorMessage: error.message,
-            timestamp: new Date()
-        }).save();
+        if (isMongoConnected) {
+            try {
+                await new ApiUsage({
+                    userId,
+                    username,
+                    requestType: 'generateContent',
+                    model: model || 'gemini-3-pro-preview',
+                    requestDuration: duration,
+                    success: false,
+                    errorMessage: error.message,
+                    timestamp: new Date()
+                }).save();
+            } catch (dbError) {
+                console.warn('⚠️ Failed to log API usage to MongoDB:', dbError.message);
+            }
+        }
         
         const status = error.status || error.response?.status || 500;
         const message = error.message || 'Internal AI Error';

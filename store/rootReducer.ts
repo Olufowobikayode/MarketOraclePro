@@ -17,7 +17,6 @@ import authReducer from '../features/auth/authSlice';
 import apiStatusReducer from '../features/apiStatus/apiStatusSlice';
 import historyReducer from '../features/history/historySlice';
 import uiReducer from '../features/ui/uiSlice';
-import adsReducer from '../features/ads/adSlice';
 import alertsReducer from '../features/alerts/alertsSlice';
 import storeAnalysisReducer from '../features/storeAnalysis/storeAnalysisSlice';
 import productFinderReducer from '../features/productFinder/productFinderSlice';
@@ -41,7 +40,6 @@ const rootReducer = combineReducers({
   apiStatus: apiStatusReducer,
   history: historyReducer,
   ui: uiReducer,
-  ads: adsReducer,
   alerts: alertsReducer,
   storeAnalysis: storeAnalysisReducer,
   productFinder: productFinderReducer,
