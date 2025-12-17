@@ -1,0 +1,7 @@
+{
+  "name": "Market Oracle",
+  "description": "A mobile-first market intelligence and strategic assistant that combines trend analysis, keyword research, e-commerce scraping, content strategy, and AI-powered Q&A into a card-driven, highly interactive app with media generation.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
