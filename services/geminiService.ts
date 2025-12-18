@@ -7,7 +7,7 @@ import type { GenerateContentResponse } from "@google/genai";
 
 // --- Secure API Key Handling ---
 // Backend URL for Proxy - Ensure this is pointing to your actual backend
-const BACKEND_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000/api';
+const BACKEND_URL = (import.meta as any).env?.VITE_API_URL || 'https://marketoraclepro-backend.onrender.com/api';
 
 export const getCurrentApiKey = (): string => {
     // STRICT: No process.env fallback. Only user input.
@@ -45,14 +45,14 @@ export const validateApiKey = async (apiKey: string): Promise<boolean> => {
                  throw new Error("❌ Invalid API Key: The key provided is not recognized by Google.");
              }
              if (msg.includes('quota') || response.status === 429) {
-                 throw new Error("⚠️ Quota Exceeded: This API Key has run out of credits.");
+                 throw new Error("😭  Quota Exceeded: This API Key has run out of credits.");
              }
              throw new Error(`Validation Error: ${msg}`);
         }
 
         // If we get here and have candidates, the key works.
         if (!data.candidates) {
-             throw new Error("⚠️ Key appears valid but returned no content. Please check permissions.");
+             throw new Error("😡  Key appears valid but returned no content. Please check permissions.");
         }
 
         return true;
@@ -104,10 +104,10 @@ const getAiClient = (): GoogleGenAI => {
 const handleApiError = (error: any, defaultMessage: string): Error => {
     const msg = error.message?.toLowerCase() || '';
     if (msg.includes("quota exceeded") || msg.includes("429")) {
-        return new Error("The Oracle's energy is depleted (Quota Exceeded). Check your billing or wait a moment.");
+        return new Error("😭 Quota Exceeded (429): Your free API key limit was reached. Please wait a moment or upgrade to Pay-as-you-go in Google AI Studio.");
     }
     if (msg.includes("invalid api key") || msg.includes("400") || msg.includes("401")) {
-        return new Error("Invalid API Key. Please update it in Settings.");
+        return new Error("😠 Invalid API Key. Please update it in Settings.");
     }
     return new Error(`${defaultMessage}: ${error.message}`);
 };
@@ -209,7 +209,7 @@ const generateWithResiliency = async (
     responseSchema?: any,
     toolType?: 'search' | 'none'
 ) => {
-    const model = 'gemini-3-pro-preview'; 
+    const model = 'gemini-2.5-flash'; 
 
     const tools: any[] = [];
     if (toolType === 'search') {
@@ -303,7 +303,7 @@ export const findCheapestProducts = async (query: string, imageBase64: string | 
 
     try {
         const response = await executeBackendRequest({
-            model: 'gemini-3-pro-preview',
+            model: 'gemini-2.5-flash',
             contents: { parts },
             config: {
                 tools: [{ googleSearch: {} }],
@@ -419,7 +419,7 @@ export const generateLeads = async (site: string, parameters: string[], strategy
 
     try {
         const response = await executeBackendRequest({
-            model: 'gemini-3-pro-preview',
+            model: 'gemini-2.5-flash',
             contents: { parts: [{ text: prompt }] },
             config: {
                 tools: [{ googleSearch: {} }],
@@ -580,7 +580,7 @@ export async function* answerQuestionStream(session: OracleSessionState, context
     const client = getAiClient();
     const prompt = `Context: ${context}. Question: ${question}`;
     const response = await client.models.generateContentStream({
-        model: 'gemini-3-pro-preview', 
+        model: 'gemini-2.5-flash', 
         contents: { parts: [{ text: prompt }] },
         config: { systemInstruction: getSystemInstruction(session), tools: [{ googleSearch: {} }] },
     });
@@ -682,7 +682,7 @@ export const editImageWithPrompt = async (base64Image: string, prompt: string): 
 export const analyzeMediaContent = async (base64Data: string, mimeType: string, prompt: string): Promise<MediaAnalysisResult> => {
      try {
         const response = await executeBackendRequest({
-            model: 'gemini-3-pro-preview', 
+            model: 'gemini-2.5-flash', 
             contents: { parts: [{ inlineData: { data: base64Data, mimeType } }, { text: prompt }] },
             config: { responseMimeType: 'application/json' } // Schema omitted for brevity, implied loosely structured JSON
         });

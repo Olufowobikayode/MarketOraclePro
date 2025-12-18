@@ -207,7 +207,7 @@ const apiUsageSchema = new mongoose.Schema({
     userId: { type: Number, required: true, index: true },
     username: String,
     requestType: String, // e.g., 'generateContent', 'chatSession'
-    model: String, // e.g., 'gemini-3-pro-preview'
+    model: String, // e.g., 'gemini-2.5-flash'
     tokensUsed: { type: Number, default: 0 },
     requestDuration: { type: Number }, // milliseconds
     success: { type: Boolean, default: true },
@@ -766,7 +766,7 @@ app.post('/api/gemini/generate', async (req, res) => {
     const startTime = Date.now();
     
     try {
-        console.log('🤖 Initializing Gemini AI with model:', model || 'gemini-3-pro-preview');
+        console.log('🤖 Initializing Gemini AI with model:', model || 'gemini-2.5-flash');
         
         // 🔒 SECURITY: Validate SDK constructor exists (prevent fallback)
         if (typeof GoogleGenAI !== 'function') {
@@ -789,7 +789,7 @@ app.post('/api/gemini/generate', async (req, res) => {
         console.log('🚀 Sending request to Gemini API...');
         
         const response = await ai.models.generateContent({
-            model: model || 'gemini-3-pro-preview',
+            model: model || 'gemini-2.5-flash',
             contents,
             config
         });
@@ -807,7 +807,7 @@ app.post('/api/gemini/generate', async (req, res) => {
                     userId,
                     username,
                     requestType: 'generateContent',
-                    model: model || 'gemini-3-pro-preview',
+                    model: model || 'gemini-2.5-flash',
                     requestDuration: duration,
                     success: true,
                     timestamp: new Date()
@@ -834,7 +834,7 @@ app.post('/api/gemini/generate', async (req, res) => {
                     userId,
                     username,
                     requestType: 'generateContent',
-                    model: model || 'gemini-3-pro-preview',
+                    model: model || 'gemini-2.5-flash',
                     requestDuration: duration,
                     success: false,
                     errorMessage: error.message,

@@ -191,6 +191,16 @@ const SettingsModal: React.FC = () => {
             {/* API Key Settings */}
             <div>
                 <h3 className="text-md font-semibold text-amber-400 mb-2 border-b border-stone-700 pb-2">Google Gemini API Key</h3>
+                
+                <div className="text-xs text-stone-400 mb-4 bg-stone-800 p-2 rounded border border-stone-700">
+                    <p className="mb-1"><strong className="text-amber-500">Token Usage & Quota:</strong></p>
+                    <ul className="list-disc pl-4 space-y-1">
+                        <li>Free keys have limits (~15 requests/min).</li>
+                        <li>If you get "Quota Exceeded", you need to wait or enable billing in Google AI Studio.</li>
+                        <li>Your key is stored locally on this device.</li>
+                    </ul>
+                </div>
+
                 <p className="text-xs text-stone-400 mb-4">
                     To power the Oracle, you must provide your own Google Gemini API key. 
                     <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-amber-500 hover:underline ml-1">Get one here</a>.
