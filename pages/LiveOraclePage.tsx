@@ -1,7 +1,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { GoogleGenAI, LiveServerMessage, Modality } from '@google/genai';
-import { getCurrentApiKey } from '../services/geminiService';
+import { getCurrentApiKey, getSystemInstruction } from '../services/geminiService';
 import Logo from '../components/Logo';
 import { useToast } from '../hooks/useToast';
 import { useSelector } from 'react-redux';
@@ -51,7 +51,8 @@ async function decodeAudioData(data: Uint8Array, ctx: AudioContext, sampleRate: 
 
 const LiveOraclePage: React.FC = () => {
     const showToast = useToast();
-    const { niche } = useSelector((state: RootState) => state.oracleSession);
+    const oracleSession = useSelector((state: RootState) => state.oracleSession);
+    const { niche } = oracleSession;
     const [isConnected, setIsConnected] = useState(false);
     const [isSpeaking, setIsSpeaking] = useState(false);
     
@@ -153,7 +154,8 @@ const LiveOraclePage: React.FC = () => {
                 config: {
                     responseModalities: [Modality.AUDIO],
                     speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } },
-                    systemInstruction: `You are the Market Oracle. Speak succinctly, mystically, but practically about "${niche}".`,
+                    systemInstruction: getSystemInstruction(oracleSession),
+                    tools: [{ googleSearch: {} }],
                 }
             });
             sessionPromiseRef.current = sessionPromise;

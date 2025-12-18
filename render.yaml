@@ -12,8 +12,7 @@ services:
         value: production
       - key: MONGODB_URI
         sync: false  # Set this in Render dashboard
-      - key: PORT
-        value: 3001
+      # Render automatically injects PORT for Node services; do not override here.
     healthCheckPath: /
 
   # Frontend Static Site

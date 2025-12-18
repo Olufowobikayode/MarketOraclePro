@@ -9,6 +9,9 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const crypto = require('crypto');
+const axios = require('axios');
+const cheerio = require('cheerio');
+const Groq = require('groq-sdk');
 
 // ✅ CORRECT IMPORT (verified with @google/genai v1.18.0+)
 const { GoogleGenAI } = require('@google/genai');
@@ -971,6 +974,115 @@ app.get('/api/search/:userId', async (req, res) => {
         res.json(results);
     } catch (error) {
         res.status(500).json({ error: error.message });
+    }
+});
+
+// 17. GROQ PROXY (User provides their own API key)
+app.post('/api/groq/generate', async (req, res) => {
+    const userApiKey = req.headers['x-groq-api-key'];
+    
+    // VALIDATION: Require user API key
+    if (!userApiKey || typeof userApiKey !== 'string' || userApiKey.trim() === '') {
+        return res.status(401).json({ 
+            error: "No API Key provided",
+            message: "Please connect your Groq API key in Settings.",
+            action: "connect_key_groq",
+            link: "https://console.groq.com/keys"
+        });
+    }
+    
+    const { model, messages, temperature, max_tokens, jsonMode } = req.body;
+    
+    try {
+        const groq = new Groq({ apiKey: userApiKey.trim() });
+        
+        const params = {
+            messages,
+            model: model || 'llama-3.3-70b-versatile', // Default to a strong model
+            temperature: temperature || 0.7,
+            max_tokens: max_tokens || 4096,
+        };
+        
+        if (jsonMode) {
+            params.response_format = { type: "json_object" };
+        }
+        
+        const completion = await groq.chat.completions.create(params);
+        
+        // Log usage if needed (optional)
+        
+        res.json(completion);
+        
+    } catch (error) {
+        console.error('❌ Groq API Error:', error.message);
+        res.status(500).json({ 
+            error: error.message || 'Groq API Error',
+            message: 'Failed to generate content with Groq.'
+        });
+    }
+});
+
+// 18. HTML EXTRACTION TOOL (System Service)
+app.post('/api/tools/extract', async (req, res) => {
+    const { url } = req.body;
+    
+    if (!url) {
+        return res.status(400).json({ error: "URL is required" });
+    }
+    
+    try {
+        // Lightweight fetch with timeout
+        const response = await axios.get(url, {
+            timeout: 10000,
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            }
+        });
+        
+        const html = response.data;
+        const $ = cheerio.load(html);
+        
+        // Remove junk
+        $('script').remove();
+        $('style').remove();
+        $('noscript').remove();
+        $('iframe').remove();
+        $('header').remove();
+        $('footer').remove();
+        $('nav').remove();
+        $('.ads').remove();
+        $('[class*="ad-"]').remove();
+        $('[id*="ad-"]').remove();
+        
+        // Extract main content
+        // Try to find common main content containers or fallback to body
+        let content = $('main').text() || $('article').text() || $('body').text();
+        
+        // Normalize whitespace
+        content = content.replace(/\s+/g, ' ').trim();
+        
+        // Limit length to prevent massive token usage
+        content = content.substring(0, 20000); // 20k chars limit
+        
+        const title = $('title').text().trim();
+        const description = $('meta[name="description"]').attr('content') || '';
+        
+        res.json({
+            title,
+            description,
+            content,
+            url
+        });
+        
+    } catch (error) {
+        console.error('❌ Extraction Error:', error.message);
+        // Do not fail hard, return unavailable
+        res.json({
+            title: "Unavailable",
+            content: "Content could not be extracted (Access Denied or Timeout).",
+            url,
+            error: error.message
+        });
     }
 });
 
